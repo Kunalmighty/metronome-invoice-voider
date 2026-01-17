@@ -6,10 +6,12 @@ A Node.js + React application to manage and void finalized invoices in your Metr
 
 ## Features
 
-- 📋 **List all finalized invoices** - View all finalized invoices in your Metronome account
+- 📋 **List invoices by status** - View finalized or voided invoices in your Metronome account
 - 🗑️ **Void individual invoices** - Void specific non-zero invoices one at a time
 - ⚡ **Bulk void** - Void all non-zero invoices with a single click
-- 📊 **Statistics dashboard** - See totals, non-zero counts, and void results at a glance
+- 🔄 **Regenerate voided invoices** - Restore voided invoices individually or all at once
+- 🔑 **Frontend API key input** - Enter your Metronome API key directly in the browser
+- 📊 **Statistics dashboard** - See totals, non-zero counts, and action results at a glance
 - 🌙 **Dark theme** - Beautiful, modern dark UI
 
 ## Prerequisites
@@ -89,15 +91,18 @@ vercel --prod
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/invoices` | GET | List all finalized invoices |
+| `/api/invoices` | GET | List invoices (use `?status=FINALIZED` or `?status=VOID`) |
 | `/api/void` | POST | Void a specific invoice |
 | `/api/void-all` | POST | Void all non-zero invoices |
+| `/api/regenerate` | POST | Regenerate a voided invoice |
+| `/api/regenerate-all` | POST | Regenerate all voided invoices |
 
 ### Example: Void a specific invoice
 
 ```bash
 curl -X POST http://localhost:3001/api/void \
   -H "Content-Type: application/json" \
+  -H "X-Metronome-Api-Key: your_api_key_here" \
   -d '{"invoiceId": "invoice-uuid-here"}'
 ```
 
@@ -105,7 +110,32 @@ curl -X POST http://localhost:3001/api/void \
 
 ```bash
 curl -X POST http://localhost:3001/api/void-all \
-  -H "Content-Type: application/json"
+  -H "Content-Type: application/json" \
+  -H "X-Metronome-Api-Key: your_api_key_here"
+```
+
+### Example: Regenerate a voided invoice
+
+```bash
+curl -X POST http://localhost:3001/api/regenerate \
+  -H "Content-Type: application/json" \
+  -H "X-Metronome-Api-Key: your_api_key_here" \
+  -d '{"invoiceId": "invoice-uuid-here"}'
+```
+
+### Example: Regenerate all voided invoices
+
+```bash
+curl -X POST http://localhost:3001/api/regenerate-all \
+  -H "Content-Type: application/json" \
+  -H "X-Metronome-Api-Key: your_api_key_here"
+```
+
+### Example: List voided invoices
+
+```bash
+curl "http://localhost:3001/api/invoices?status=VOID" \
+  -H "X-Metronome-Api-Key: your_api_key_here"
 ```
 
 ## Project Structure
@@ -115,7 +145,9 @@ metronome-invoice-voider/
 ├── api/                    # Vercel serverless functions
 │   ├── invoices.js         # GET /api/invoices
 │   ├── void.js             # POST /api/void
-│   └── void-all.js         # POST /api/void-all
+│   ├── void-all.js         # POST /api/void-all
+│   ├── regenerate.js       # POST /api/regenerate
+│   └── regenerate-all.js   # POST /api/regenerate-all
 ├── src/                    # React frontend
 │   ├── App.jsx             # Main application component
 │   ├── main.jsx            # React entry point
@@ -130,9 +162,11 @@ metronome-invoice-voider/
 
 ## How It Works
 
-1. **Fetch Invoices**: The app calls the Metronome API to list all invoices with status "FINALIZED"
-2. **Filter Non-Zero**: Invoices with a total amount of $0.00 are excluded from void operations
-3. **Void Invoices**: Selected invoices are voided via the Metronome API
+1. **Enter API Key**: Provide your Metronome API key in the frontend (stored in browser localStorage)
+2. **Fetch Invoices**: The app calls the Metronome API to list invoices by status (FINALIZED or VOID)
+3. **Filter Non-Zero**: Invoices with a total amount of $0.00 are excluded from void operations
+4. **Void Invoices**: Selected invoices are voided via the Metronome API
+5. **Regenerate Invoices**: Voided invoices can be regenerated to restore them
 
 ## Security Notes
 

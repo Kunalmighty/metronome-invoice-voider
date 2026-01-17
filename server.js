@@ -76,13 +76,21 @@ const server = createServer(async (req, res) => {
     if (pathname === '/api/invoices') {
       const handler = (await import('./api/invoices.js')).default;
       const mockRes = createMockRes(res);
-      await handler({ method: req.method, headers: req.headers, body: await parseBody(req) }, mockRes);
+      await handler({ method: req.method, headers: req.headers, query: parsedUrl.query, body: await parseBody(req) }, mockRes);
     } else if (pathname === '/api/void') {
       const handler = (await import('./api/void.js')).default;
       const mockRes = createMockRes(res);
       await handler({ method: req.method, headers: req.headers, body: await parseBody(req) }, mockRes);
     } else if (pathname === '/api/void-all') {
       const handler = (await import('./api/void-all.js')).default;
+      const mockRes = createMockRes(res);
+      await handler({ method: req.method, headers: req.headers, body: await parseBody(req) }, mockRes);
+    } else if (pathname === '/api/regenerate') {
+      const handler = (await import('./api/regenerate.js')).default;
+      const mockRes = createMockRes(res);
+      await handler({ method: req.method, headers: req.headers, body: await parseBody(req) }, mockRes);
+    } else if (pathname === '/api/regenerate-all') {
+      const handler = (await import('./api/regenerate-all.js')).default;
       const mockRes = createMockRes(res);
       await handler({ method: req.method, headers: req.headers, body: await parseBody(req) }, mockRes);
     } else {
@@ -101,7 +109,9 @@ const server = createServer(async (req, res) => {
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`\n🚀 API server running at http://localhost:${PORT}`);
-  console.log(`   - GET  /api/invoices    - List all finalized invoices`);
-  console.log(`   - POST /api/void        - Void a specific invoice`);
-  console.log(`   - POST /api/void-all    - Void all non-zero invoices\n`);
+  console.log(`   - GET  /api/invoices       - List invoices by status`);
+  console.log(`   - POST /api/void           - Void a specific invoice`);
+  console.log(`   - POST /api/void-all       - Void all non-zero invoices`);
+  console.log(`   - POST /api/regenerate     - Regenerate a voided invoice`);
+  console.log(`   - POST /api/regenerate-all - Regenerate all voided invoices\n`);
 });

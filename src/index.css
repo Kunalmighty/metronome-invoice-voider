@@ -195,6 +195,7 @@ body::before {
 .stat-value.total { color: var(--text-primary); }
 .stat-value.non-zero { color: var(--warning); }
 .stat-value.voided { color: var(--success); }
+.stat-value.regenerated { color: var(--accent-secondary); }
 .stat-value.failed { color: var(--danger); }
 
 .stat-label {
@@ -257,6 +258,18 @@ body::before {
   box-shadow: 0 6px 25px var(--danger-glow);
 }
 
+.btn-success {
+  background: var(--success);
+  color: white;
+  box-shadow: 0 4px 20px var(--success-glow);
+}
+
+.btn-success:hover:not(:disabled) {
+  background: #16a34a;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 25px var(--success-glow);
+}
+
 /* Invoice Table */
 .table-container {
   background: var(--bg-card);
@@ -280,10 +293,43 @@ body::before {
   color: var(--text-primary);
 }
 
+.table-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .table-header span {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.85rem;
   color: var(--text-muted);
+}
+
+.status-filter {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.status-filter:hover {
+  border-color: var(--border-accent);
+}
+
+.status-filter:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.status-filter option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .table-wrapper {
@@ -355,9 +401,14 @@ tr:hover td {
   color: var(--accent-secondary);
 }
 
-.status-badge.voided {
-  background: var(--success-glow);
-  color: var(--success);
+.status-badge.voided,
+.status-badge.void {
+  background: var(--danger-glow);
+  color: var(--danger);
+}
+
+.actions-cell {
+  min-width: 100px;
 }
 
 .btn-small {

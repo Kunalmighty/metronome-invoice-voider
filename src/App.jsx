@@ -9,13 +9,17 @@ function App() {
   const [invoices, setInvoices] = useState([])
   const [loading, setLoading] = useState(false)
   const [voidingAll, setVoidingAll] = useState(false)
+  const [regeneratingAll, setRegeneratingAll] = useState(false)
   const [voidingId, setVoidingId] = useState(null)
+  const [regeneratingId, setRegeneratingId] = useState(null)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
+  const [statusFilter, setStatusFilter] = useState('FINALIZED')
   const [stats, setStats] = useState({
     total: 0,
     nonZero: 0,
     voided: 0,
+    regenerated: 0,
     failed: 0,
   })
 
@@ -36,7 +40,7 @@ function App() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`${API_BASE}/api/invoices`, {
+      const res = await fetch(`${API_BASE}/api/invoices?status=${statusFilter}`, {
         headers: getHeaders(),
       })
       const data = await res.json()
@@ -83,6 +87,76 @@ function App() {
       setError(err.message)
     } finally {
       setVoidingId(null)
+    }
+  }
+
+  const regenerateInvoice = async (invoiceId) => {
+    setRegeneratingId(invoiceId)
+    setError(null)
+    try {
+      const res = await fetch(`${API_BASE}/api/regenerate`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ invoiceId }),
+      })
+      const data = await res.json()
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to regenerate invoice')
+      }
+      
+      setSuccess(`Invoice ${invoiceId.slice(0, 8)}... regenerated successfully`)
+      setStats(prev => ({ ...prev, regenerated: prev.regenerated + 1 }))
+      setTimeout(() => setSuccess(null), 3000)
+      
+      // Refresh the list
+      await fetchInvoices()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setRegeneratingId(null)
+    }
+  }
+
+  const regenerateAllVoided = async () => {
+    if (!confirm('Are you sure you want to regenerate all voided invoices?')) {
+      return
+    }
+    
+    setRegeneratingAll(true)
+    setError(null)
+    try {
+      const res = await fetch(`${API_BASE}/api/regenerate-all`, {
+        method: 'POST',
+        headers: getHeaders(),
+      })
+      const data = await res.json()
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to regenerate invoices')
+      }
+      
+      const regeneratedCount = data.regenerated?.length || 0
+      const failedCount = data.failed?.length || 0
+      
+      setStats(prev => ({
+        ...prev,
+        regenerated: prev.regenerated + regeneratedCount,
+      }))
+      
+      if (failedCount > 0) {
+        setError(`Regenerated ${regeneratedCount} invoices, but ${failedCount} failed`)
+      } else {
+        setSuccess(`Successfully regenerated ${regeneratedCount} voided invoices`)
+        setTimeout(() => setSuccess(null), 5000)
+      }
+      
+      // Refresh the list
+      await fetchInvoices()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setRegeneratingAll(false)
     }
   }
 
@@ -133,7 +207,7 @@ function App() {
     if (apiKey) {
       fetchInvoices()
     }
-  }, [])
+  }, [statusFilter])
 
   const formatAmount = (invoice) => {
     const amount = invoice.total ?? invoice.subtotal ?? 0
@@ -230,8 +304,8 @@ function App() {
           <div className="stat-label">Voided This Session</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value failed">{stats.failed}</div>
-          <div className="stat-label">Failed to Void</div>
+          <div className="stat-value regenerated">{stats.regenerated}</div>
+          <div className="stat-label">Regenerated</div>
         </div>
       </div>
 
@@ -279,12 +353,43 @@ function App() {
             </>
           )}
         </button>
+        <button 
+          className="btn btn-success" 
+          onClick={regenerateAllVoided} 
+          disabled={regeneratingAll || loading || !apiKey}
+        >
+          {regeneratingAll ? (
+            <>
+              <span className="spinner"></span>
+              Regenerating...
+            </>
+          ) : (
+            <>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M23 4v6h-6"/>
+                <path d="M1 20v-6h6"/>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+              </svg>
+              Regenerate All Voided
+            </>
+          )}
+        </button>
       </div>
 
       <div className="table-container">
         <div className="table-header">
-          <h2>Finalized Invoices</h2>
-          <span>{invoices.length} invoice{invoices.length !== 1 ? 's' : ''}</span>
+          <h2>{statusFilter === 'FINALIZED' ? 'Finalized' : 'Voided'} Invoices</h2>
+          <div className="table-header-controls">
+            <select 
+              className="status-filter"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="FINALIZED">Finalized</option>
+              <option value="VOID">Voided</option>
+            </select>
+            <span>{invoices.length} invoice{invoices.length !== 1 ? 's' : ''}</span>
+          </div>
         </div>
         
         {invoices.length === 0 && !loading ? (
@@ -329,8 +434,20 @@ function App() {
                         {invoice.status || 'FINALIZED'}
                       </span>
                     </td>
-                    <td>
-                      {isNonZero(invoice) && (
+                    <td className="actions-cell">
+                      {invoice.status === 'VOID' ? (
+                        <button 
+                          className="btn btn-success btn-small"
+                          onClick={() => regenerateInvoice(invoice.id)}
+                          disabled={regeneratingId === invoice.id}
+                        >
+                          {regeneratingId === invoice.id ? (
+                            <span className="spinner"></span>
+                          ) : (
+                            'Regenerate'
+                          )}
+                        </button>
+                      ) : isNonZero(invoice) && (
                         <button 
                           className="btn btn-danger btn-small"
                           onClick={() => voidInvoice(invoice.id)}

@@ -28,18 +28,21 @@ export default async function handler(req, res) {
   try {
     const client = getMetronomeClient(req);
 
-    // GET: List all finalized invoices
+    // GET: List invoices by status
     if (req.method === "GET") {
+      // Get status from query parameter (default to FINALIZED)
+      const status = req.query?.status || "FINALIZED";
+      
       // First, get all customers
       const allInvoices = [];
       
       // Fetch all customers using pagination
       for await (const customer of client.v1.customers.list({ limit: 100 })) {
-        // For each customer, fetch their finalized invoices
+        // For each customer, fetch their invoices with the specified status
         try {
           for await (const invoice of client.v1.customers.invoices.list({
             customer_id: customer.id,
-            status: "FINALIZED",
+            status: status,
             limit: 100,
           })) {
             allInvoices.push(invoice);
