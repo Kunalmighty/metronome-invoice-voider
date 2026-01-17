@@ -1,45 +1,7 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/invoices",
-      "dest": "/api/invoices.js"
-    },
-    {
-      "src": "/api/void",
-      "dest": "/api/void.js"
-    },
-    {
-      "src": "/api/void-all",
-      "dest": "/api/void-all.js"
-    },
-    {
-      "src": "/api/regenerate",
-      "dest": "/api/regenerate.js"
-    },
-    {
-      "src": "/api/regenerate-all",
-      "dest": "/api/regenerate-all.js"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
