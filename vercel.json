@@ -15,12 +15,31 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
+      "src": "/api/invoices",
+      "dest": "/api/invoices.js"
+    },
+    {
+      "src": "/api/void",
+      "dest": "/api/void.js"
+    },
+    {
+      "src": "/api/void-all",
+      "dest": "/api/void-all.js"
+    },
+    {
+      "src": "/api/regenerate",
+      "dest": "/api/regenerate.js"
+    },
+    {
+      "src": "/api/regenerate-all",
+      "dest": "/api/regenerate-all.js"
+    },
+    {
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
-      "dest": "/$1"
+      "dest": "/index.html"
     }
   ]
 }
