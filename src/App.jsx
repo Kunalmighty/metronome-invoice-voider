@@ -15,6 +15,7 @@ function App() {
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
   const [statusFilter, setStatusFilter] = useState('FINALIZED')
+  const [regeneratedResults, setRegeneratedResults] = useState(null)
   const [stats, setStats] = useState({
     total: 0,
     nonZero: 0,
@@ -125,6 +126,7 @@ function App() {
     
     setRegeneratingAll(true)
     setError(null)
+    setRegeneratedResults(null)
     try {
       const res = await fetch(`${API_BASE}/api/regenerate-all`, {
         method: 'POST',
@@ -139,25 +141,36 @@ function App() {
       const regeneratedCount = data.regenerated?.length || 0
       const failedCount = data.failed?.length || 0
       
+      // Store the results to display
+      setRegeneratedResults({
+        regenerated: data.regenerated || [],
+        failed: data.failed || [],
+      })
+      
       setStats(prev => ({
         ...prev,
         regenerated: prev.regenerated + regeneratedCount,
       }))
       
+      // Clear the voided invoices list since they're now regenerated
+      setInvoices([])
+      setStats(prev => ({ ...prev, total: 0, nonZero: 0 }))
+      
       if (failedCount > 0) {
         setError(`Regenerated ${regeneratedCount} invoices, but ${failedCount} failed`)
       } else {
         setSuccess(`Successfully regenerated ${regeneratedCount} voided invoices`)
-        setTimeout(() => setSuccess(null), 5000)
       }
-      
-      // Refresh the list
-      await fetchInvoices()
     } catch (err) {
       setError(err.message)
     } finally {
       setRegeneratingAll(false)
     }
+  }
+
+  const clearRegeneratedResults = () => {
+    setRegeneratedResults(null)
+    setSuccess(null)
   }
 
   const voidAllNonZero = async () => {
@@ -194,7 +207,11 @@ function App() {
         setTimeout(() => setSuccess(null), 5000)
       }
       
-      // Refresh the list
+      // Clear the current list immediately to reflect changes
+      setInvoices([])
+      setStats(prev => ({ ...prev, total: 0, nonZero: 0 }))
+      
+      // Refresh the list to get updated data from server
       await fetchInvoices()
     } catch (err) {
       setError(err.message)
@@ -375,6 +392,57 @@ function App() {
           )}
         </button>
       </div>
+
+      {regeneratedResults && (
+        <div className="results-panel">
+          <div className="results-header">
+            <h2>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              Regeneration Results
+            </h2>
+            <button className="btn btn-small" onClick={clearRegeneratedResults}>
+              Dismiss
+            </button>
+          </div>
+          
+          {regeneratedResults.regenerated.length > 0 && (
+            <div className="results-section">
+              <h3 className="results-section-title success">
+                ✓ Successfully Regenerated ({regeneratedResults.regenerated.length})
+              </h3>
+              <div className="results-list">
+                {regeneratedResults.regenerated.map((inv) => (
+                  <div key={inv.id} className="result-item success">
+                    <span className="result-id">{inv.id.slice(0, 8)}...</span>
+                    <span className="result-amount">
+                      {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(inv.total || 0)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {regeneratedResults.failed.length > 0 && (
+            <div className="results-section">
+              <h3 className="results-section-title error">
+                ✗ Failed to Regenerate ({regeneratedResults.failed.length})
+              </h3>
+              <div className="results-list">
+                {regeneratedResults.failed.map((inv) => (
+                  <div key={inv.id} className="result-item error">
+                    <span className="result-id">{inv.id.slice(0, 8)}...</span>
+                    <span className="result-error">{inv.error}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="table-container">
         <div className="table-header">
