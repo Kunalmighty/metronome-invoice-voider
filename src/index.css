@@ -67,9 +67,9 @@ body::before {
 }
 
 .logo {
-  width: 120px;
+  width: 200px;
   height: auto;
-  margin-bottom: 1rem;
+  margin-bottom: 0.35rem;
   filter: drop-shadow(0 4px 20px var(--accent-glow));
 }
 
