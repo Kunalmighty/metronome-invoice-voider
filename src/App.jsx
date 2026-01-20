@@ -242,6 +242,7 @@ function App() {
   return (
     <div className="app">
       <header className="header">
+        <img src="/gnomeworks.png" alt="Gnomeworks Logo" className="logo" />
         <h1>Metronome Invoice Voider</h1>
         <p>Manage and void finalized invoices in your Metronome account</p>
       </header>
